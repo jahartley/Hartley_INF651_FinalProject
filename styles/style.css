@@ -44,7 +44,7 @@ body {
   width: 100%;
   max-width: 90vw;
   margin: auto;
-  height: 100vh;
+  height: 100%;
   
 }
 
@@ -61,8 +61,7 @@ body {
   height: 100%;
   overflow-y: scroll;
   scrollbar-width: none;
-  /* scroll-snap-type: both mandatory; */
-  /* overscroll-behavior-x: contain; */
+  overscroll-behavior-x: contain;
   /* scroll-behavior: smooth; */
   /* overflow-anchor: none; */
 }
@@ -82,13 +81,14 @@ body {
   z-index: 9998;
   top: 0;
   left: 0;
-  width: 100vw;
+  width: 100%;
   height: 100vh;
   background-size: contain;
   background-repeat: no-repeat no-repeat;
   background-position: center center;
   background-color: rgba(255, 255, 255, 0.0);
   backdrop-filter: blur(5px);
+  cursor: not-allowed;
 }
 
 .topMsg {
@@ -96,7 +96,7 @@ body {
   z-index: 9998;
   top: 0;
   left: 0;
-  width: 100vw;
+  width: 100%;
   height: fit-content;
 }
 
@@ -140,6 +140,7 @@ body {
   box-shadow: 12px 12px 2px 1px rgba(0, 0, 0, .2);
   border-radius: 10px;
   background-color: #ffffff;
+  cursor: default;
 }
 
 .topBox {
@@ -156,6 +157,11 @@ body {
   border-radius: 10px;
   background-color: #c8c8c89c;
   backdrop-filter: blur(20px);
+  cursor: default
+}
+
+.closeBox {
+  cursor: not-allowed !important;
 }
 
 .inline {
@@ -185,7 +191,7 @@ body {
   }
 }
 
-.tag {
+.tag, .people, .filter {
   display: inline-block;
   border-radius: 3px;
   padding: .2em .5em .3em;
@@ -198,18 +204,7 @@ body {
   cursor: pointer;
 }
 
-.people {
-  display: inline-block;
-  border-radius: 3px;
-  padding: .2em .5em .3em;
-  border-radius: 2px;
-  background: #222;
-  color: #00d8ff;
-  font-weight: 600;
-  font-size: 14px;
-  margin: .25em .1em;
-  cursor: pointer;
-}
+
 
 .footer {
   position: fixed;
@@ -220,6 +215,10 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+
+.navBtn {
+  cursor: pointer;
 }
 
 .container {
@@ -254,7 +253,6 @@ body {
       justify-content: center;
       align-items: center;
       opacity: 0;
-      cursor: pointer;
       transition: 0.2s ease-in;
 
       &:nth-of-type(1) {
@@ -321,7 +319,6 @@ body {
       align-items: center;
       flex-direction: column;
       color: #ffffff;
-      cursor: pointer;
       max-height: 5rem;
       max-width: 5rem;
 

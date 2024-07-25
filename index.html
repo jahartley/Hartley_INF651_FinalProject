@@ -14,14 +14,43 @@
     <div class="footer" id="footerNav"></div>
 
     <!-- Message boxes -->
-    <div class="modal hidden hideAll" id="infoBox">
+    <div class="modal hidden hideAll infoBox">
       <div class="messageBox"><h2>Click to continue</h2><p></p></div>
     </div>
 
-    <div class="topMsg hidden hideAll" id="photoInfo">
-      <div class="topBox flexRowContainer" id="photoInfoBox">
+    <div class="modal hidden hideAll searchDateBox">
+      <div class="messageBox noClick">
+        <h2>Date Search</h2>
+        <p>Pick a date, and the photo viewer will start at the closest photo to that date.</p>
+        <input type="date" name="dateSearch" value="2018-02-16">
+        <div class="box navBtn" id="dateSearchGo">
+          <span>Search</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal hidden hideAll searchTagsBox">
+      <div class="messageBox noClick">
+        <h2>Tags Search</h2>
+        <p>Pick some tags, and the photo viewer will start at the closest photo to that date.</p>
+        <input type="date" name="dateSearch" value="2018-02-16">
+        <div class="box navBtn" id="dateSearchGo">
+          <span>Search</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="topMsg">
+      <div class="topBox flexRowContainer hidden" id="filterTagsBox">
+        <div class="filters infoSvg flexRowChild flexRowContainer"><h3>Filters</h3></div>
+      </div>
+      <div class="topBox flexRowContainer hidden hideAll allInfo closeBox" id="photoTagsBox">
         <div class="tagsInfo infoSvg flexRowChild flexRowContainer"><h3>Tags</h3></div>
+      </div>
+      <div class="topBox flexRowContainer hidden hideAll allInfo closeBox" id="photoPeopleBox">
         <div class="peopleInfo infoSvg flexRowChild flexRowContainer"><h3>People</h3></div>
+      </div>
+      <div class="topBox flexRowContainer hidden hideAll allInfo closeBox" id="photoImageBox">
         <div class="imageInfo infoSvg flexRowChild flexRowContainer" ><h3>Image</h3>
           <p>Filename: ...</p>
           <p>File size: ...</p>
@@ -29,6 +58,8 @@
           <p>Compression: JPEG old-style, Megapixels: 12.2</p>
           <p>DOF: ..., FOV: ...</p>
         </div>
+      </div>
+      <div class="topBox flexRowContainer hidden hideAll allInfo closeBox" id="photoCameraBox">
         <div class="cameraInfo infoSvg flexRowChild flexRowContainer">
           <h3>Camera</h3>
           <p>Make: Google, Model: Pixel 3a XL</p>
@@ -36,18 +67,6 @@
           <p>Subject Distance: 0.997m, Focal Length: 4.4mm</p>
           <p>35mm Eq Focal: 27mm, </p>
         </div>
-      </div>
-    </div>
-
-    <div class="topMsg hidden hideAll" id="photoTags">
-      <div class="topBox flexRowContainer" id="photoTagsBox">
-        <div class="tagsInfo infoSvg flexRowChild flexRowContainer"><h3>Tags</h3></div>
-      </div>
-    </div>
-  
-    <div class="topMsg hidden hideAll" id="photoPeople">
-      <div class="topBox flexRowContainer" id="photoPeopleBox">
-        <div class="peopleInfo infoSvg flexRowChild flexRowContainer"><h3>People</h3></div>
       </div>
     </div>
 
@@ -77,8 +96,8 @@
           <div class="box hidden">
             <span>home</span>
           </div>
-          <div class="box up" >
-            <button id="navActive"></button>
+          <div class="box up navBtn" id="navActive">
+            <button id="navActiveBtn"></button>
           </div>
           <div class="box navBtn" id="navLocation">
             <span>Where</span>

@@ -12,6 +12,8 @@ let currentEl = null;
 let currentId = null;
 
 const defaultIndex = [];
+const defaultIndexDateUnix = [];
+let filters = [];
 
 for (let index = 0; index < photos.length; index++) {
   defaultIndex.push(index);
@@ -19,6 +21,9 @@ for (let index = 0; index < photos.length; index++) {
 
 let inUseIndex = [...defaultIndex];
 
+for (let index = 0; index < photos.length; index++) {
+  defaultIndexDateUnix.push(getDateExif(index));
+}
 
 const uniqueTags = photos.filter((photo) => photo?.tags != undefined).map((photo) => photo.tags.map((tag) => tag)).flat().filter((value, index, currentValue) => currentValue.indexOf(value) === index);
 const uniquePeople = photos.filter((photo) => photo?.people != undefined).map((photo) => photo.people.map((tag) => tag)).flat().filter((value, index, currentValue) => currentValue.indexOf(value) === index);
@@ -32,10 +37,20 @@ function combineTagsPeople(i) {
 
 const searchMap = photos.map((photo, i) => (photo?.people != undefined) ? i : undefined).filter(x => x != undefined).flatMap((i) => combineTagsPeople(i));
 
-function searchArr(arr) {
-  return searchMap.filter((item) => arr.includes(item[0])).map((item) => item[1]).filter((value, index, currentValue) => currentValue.indexOf(value) === index);;
+function searchArr() {
+  return searchMap.filter((item) => filters.includes(item[0])).map((item) => item[1]).filter((value, index, currentValue) => currentValue.indexOf(value) === index);
 }
 
+function tagSearch() {
+  let photoId = currentId;
+  console.log(`currentId ${currentId} inUseIndex index ${inUseIndex.indexOf(currentId)}`);
+  let result = searchArr();
+  console.log(result);
+  if (result.length == 0) inUseIndex = [...defaultIndex]; else inUseIndex = [...result];
+  clearPhotos();
+  loadFirstPhoto(inUseIndex.indexOf(photoId));
+  updateFilter();
+}
 
 //inUseIndex = [...searchArr(["Judson", "theBeast"])]
 
@@ -69,11 +84,11 @@ function ioCallback (entries, ioObserver) {
   });
 }
 
-let photoElList = [];
-function loadImageArr() {
-  if (photoElList.length == 0) return;
-  loadImage(photoElList.shift());
-}
+// let photoElList = [];
+// function loadImageArr() {
+//   if (photoElList.length == 0) return;
+//   loadImage(photoElList.shift());
+// }
 
 function loadImage(target) {
   if (!target.firstChild.classList.contains("lazy")) return;
@@ -96,6 +111,9 @@ function loadRange(idS, target) {
  * 'afterend': After the targetElement itself.
  */
 function addPhoto(number, element, where){
+  // console.log(inUseIndex);
+  // console.log(photos[inUseIndex[number]]);
+  // console.log(number);
   const photo = document.getElementById("photoBoxTemplate").content.cloneNode(true);
   photo.children[0].id = 'pic'+ inUseIndex[number];
   photo.children[0].firstChild.dataset.src = `images/testPics/${photos[inUseIndex[number]].File.FileName}`;
@@ -168,43 +186,40 @@ function scrollToTarget(target){
   }
 }
 
-const infoEl = document.getElementById("infoBox");
-const photoInfoEl = document.getElementById("photoInfo");
-const photoTagsEl = document.getElementById("photoTags");
-const photoPeopleEl = document.getElementById("photoPeople");
-
-infoEl.addEventListener('click', () => {
-  infoEl.classList.add("hidden");
-});
-
-photoInfoEl.addEventListener('click', () => {
-  photoInfoEl.classList.add("hidden");
-});
-
-photoTagsEl.addEventListener('click', () => {
-  photoTagsEl.classList.add("hidden");
-});
-
-photoPeopleEl.addEventListener('click', () => {
-  photoPeopleEl.classList.add("hidden");
-});
-
 function popUpHideAll(){
-  document.querySelectorAll(".hideAll").forEach((el) => el.classList.add("hidden"));
+  document.querySelectorAll(".hideAll").forEach(el => el.classList.add("hidden"));
+}
+
+function showInfo(classId) {
+  console.log(`showInfo ${classId}`);
+  document.querySelectorAll(classId).forEach(el => el.classList.remove("hidden"));
+}
+
+function hideInfo(classId) {
+  console.log(`hideInfo ${classId}`);
+  document.querySelectorAll(classId).forEach(el => el.classList.add("hidden"));
 }
 
 //show the infoBox modal
-const infoTextEl = document.getElementById("infoText");
 function infoBox(msg){
   popUpHideAll();
-  document.querySelector("#infoBox > div > h2").textContent = msg;
-  infoEl.classList.remove("hidden");
-  //infoTextEl.innerText = msg;
+  document.querySelector(".infoBox > div > h2").textContent = msg;
+  showInfo(".infoBox");
 }
 
 function updateAll() {
   updateTags();
   updatePeople();
+}
+
+function updateFilter() {
+  document.querySelectorAll(".filters > .filter").forEach(el => el.remove());
+  if (filters.length == 0) {
+    hideInfo("#filterTagsBox");
+    return;
+  }
+  filters.forEach(item => document.querySelectorAll(".filters").forEach(el => el.innerHTML = el.innerHTML + `<span class="filter" name="filter_${item}">${item}</span>`));
+  showInfo("#filterTagsBox");
 }
 
 function updateTags() {
@@ -232,37 +247,224 @@ document.addEventListener("readystatechange", (event) => {
     loginSuccess();
   } else if (event.target.readyState === "complete") {
     console.log("complete");
-    let randomPic = getRandomInt(photos.length);
-    topPhotoPointer = randomPic;
-    bottomPhotoPointer = randomPic;
-    console.log(`loading first ${randomPic}`);
-    targetEl = addPhoto(randomPic,mainContainerEl,'beforeend');
-    loadRange(randomPic, targetEl);
+    loadFirstPhoto();
     document.body.addEventListener('click', bodyClickWatch, true);
   }
 });
 
+
+//===================== Click events ===================================
+  
+// use common click handler to catch pointerdown events. Contains should
+// go from smallest elements to largest...
 function bodyClickWatch(event){
   //console.log(event);
+  let elements = document.querySelectorAll(".tag, .people");
+  for ( const el of elements) {
+    if (el.contains(event.target)) {
+      //console.log(el.getAttribute("name"));
+      tagClicked(el.getAttribute("name"));
+      return;
+    }
+  }
+  elements = document.querySelectorAll(".filter");
+  for ( const el of elements) {
+    if (el.contains(event.target)) {
+      //console.log(el.getAttribute("name"));
+      filterClicked(el.getAttribute("name"));
+      return;
+    }
+  }
+  elements = document.querySelectorAll(".navBtn");
+  for ( const el of elements) {
+    if (el.contains(event.target)) {
+      //console.log(`navBtn Click ${el.getAttribute("id")}`);
+      navBtnClicked(el.getAttribute("id"));
+      return;
+    }
+  }
+
+  elements = document.querySelectorAll(".noClick");
+  for ( const el of elements) {
+    if (el.contains(event.target)) {
+      console.log(`noClick ${el}`);
+      return;
+    }
+  }
+
+  elements = document.querySelectorAll(".modal, .topMsg");
+  for ( const el of elements) {
+    if (el.contains(event.target)) {
+      console.log(el.getAttribute("id"));
+      popUpHideAll();
+      return;
+    }
+  }
   if (currentEl.contains(event.target)) {
     console.log("clicked current pic");
     return;
   }
-  if (document.getElementById("footerNav").contains(event.target)) {
-    console.log("clicked bottom nav");
+}
+
+//handle tags and people tags clicked.
+function tagClicked(name){
+  console.log(name);
+  filters.push(name.split("_")[1]);
+  tagSearch();
+}
+
+function filterClicked(name){
+  console.log(`filter remove clicked ${name}`);
+  let index = filters.indexOf(name.split("_")[1]);
+  if (index == -1) return;
+  filters.splice(index, 1);
+  tagSearch();
+}
+
+//handle navBtn clicks
+function navBtnClicked(btn){
+  console.log(btn);
+  if (btn == null) return;
+  if (btn == "navActive") {
+    if (document.querySelector(".nav-collapse").classList.contains("active")) navHide(); else navShow();
     return;
   }
-  let elements = document.querySelectorAll(".tag");
-  elements.forEach((el) => {
-    if (el.contains(event.target)) console.log(el.getAttribute("name"));
+  if (btn == "navSearchDate") {
+    popUpHideAll();
+    showInfo(".searchDateBox");
+    navHide();
+    return;
+  }
+  if (btn == "navSearchPeople") {
+    popUpHideAll();
+    showInfo(".searchPeopleBox");
+    navHide();
+    return;
+  }
+  if (btn == "navSearchAll") {
+    popUpHideAll();
+    showInfo(".searchAllBox");
+    navHide();
+    return;
+  }
+  if (btn == "navSearchTags") {
+    popUpHideAll();
+    showInfo(".searchTagsBox");
+    navHide();
+    return;
+  }
+  if (btn == "navSearchStar") {
+    popUpHideAll();
+    showInfo(".searchStarsBox");
+    navHide();
+    return;
+  }
+  if (btn == 'navInfo') {
+    popUpHideAll();
+    showInfo(".allInfo");
+    return;
+  }
+  if (btn == 'navTag') {
+    popUpHideAll();
+    showInfo("#photoTagsBox");
+    return;
+  }
+  if (btn == 'navPeople') {
+    popUpHideAll();
+    showInfo("#photoPeopleBox");
+    return;
+  }
+  if (btn == "dateSearchGo") {
+    let el = document.getElementById("searchDateBox");
+    let dateValue = el.querySelector("input").value;
+    dateValue = Date.parse(dateValue);
+    let index;
+    for (index = 0; index < inUseIndex.length; index++) {
+      console.log(getDateExif(index) - dateValue);
+      if (dateValue < getDateExif(index)) break;      
+    }
+    clearPhotos();
+    // set inUseIndex to all photos...
+    inUseIndex = [...defaultIndex];
+    loadFirstPhoto(index);
+    el.classList.add("hidden");
+    return;
+  }
+  if (btn == 'navLocation') {
+    if (currentId == null) return; 
+    if (photos2[currentId]?.Composite?.GPSLatitude == undefined) return;
+    if (photos2[currentId]?.Composite?.GPSLongitude == undefined) return;
+    window.open(`https://www.google.com/maps/search/?api=1&query=${photos2[currentId]?.Composite?.GPSLatitude}%2C${photos2[currentId]?.Composite?.GPSLongitude}`);
+    return;
+  }
+}
+
+function getDateExif(id) {
+  let pId = inUseIndex[id];
+  if (photos2[pId]?.EXIF?.CreateDate == undefined || photos2[pId]?.EXIF?.OffsetTime == undefined) return undefined;
+  let dateString = photos2[pId].EXIF.CreateDate.split(/:| /)[0];
+  dateString += "-";
+  dateString += photos2[pId].EXIF.CreateDate.split(/:| /)[1];
+  dateString += "-";
+  dateString += photos2[pId].EXIF.CreateDate.split(/:| /)[2];
+  dateString += "T";
+  dateString += photos2[pId].EXIF.CreateDate.split(" ")[1];
+  dateString += ".000";
+  dateString += photos2[pId].EXIF.OffsetTime;
+  console.log(dateString);
+  return Date.parse(dateString);
+}
+
+
+function clearPhotos(){
+  document.querySelectorAll('.photobox').forEach(e => e.remove());
+}
+
+function loadFirstPhoto(index){
+  if (index == undefined || index == null) {
+    index = getRandomInt(inUseIndex.length);
+  }
+  topPhotoPointer = bottomPhotoPointer = index;
+  console.log(`loading first ${index}`);
+  resEl = addPhoto(index,mainContainerEl,'beforeend');
+  loadRange(index, resEl);
+}
+
+
+
+function navShow(){
+  let navBtnEl = document.querySelector("#navActiveBtn");
+  let navEl = document.querySelector(".nav-collapse");
+  let navBoxesEl = document.querySelectorAll(".nav-collapse .box");
+  navEl.classList.add("active");
+  navBtnEl.classList.add("active");
+  setTimeout(() => {
+    navEl.style.width = `40rem`;
+    navBoxesEl.forEach((box) => {
+      box.classList.add("active");
+    });
+  }, 500);
+}
+function navHide(){
+  let navBtnEl = document.querySelector("#navActiveBtn");
+  let navEl = document.querySelector(".nav-collapse");
+  let navBoxesEl = document.querySelectorAll(".nav-collapse .box");
+  navBoxesEl.forEach((box) => {
+    box.classList.remove("active");
   });
+  navBtnEl.classList.remove("active");
+  navEl.style.width = `6rem`;
+  setTimeout(() => {
+    navEl.classList.remove("active");
+  }, 500);
 }
 
 function loginSuccess() {
   const navFooterEl = document.getElementById("navFooterTemplate").content.cloneNode(true);
+    
   let tempEl, tempEl2;
 
-  //add svg
+  //add svgs
 
   tempEl = navFooterEl.querySelector("#navSearchDate");
   tempEl2 = document.querySelector("template.svgCalendar").content.cloneNode(true);
@@ -310,17 +512,17 @@ function loginSuccess() {
   tempEl2.querySelector("title").textContent = "Show People";
   tempEl.prepend(tempEl2.children[0]);
 
-  tempEl = navFooterEl.querySelector("#navActive");
+  tempEl = navFooterEl.querySelector("#navActiveBtn");
   tempEl2 = document.querySelector("template.svgCancel").content.cloneNode(true);
   tempEl2.querySelector("title").textContent = "Open or Close Search Menu";
   tempEl.appendChild(tempEl2.children[0]);
 
-  tempEl = document.querySelectorAll(".tagsInfo");
+  tempEl = document.querySelectorAll(".tagsInfo, .filters");
   tempEl2 = document.querySelector("template.svgTag").content.cloneNode(true);
   tempEl2.querySelector("title").textContent = "Image Tags";
   tempEl.forEach((el) => el.prepend(tempEl2.cloneNode(true).children[0]));
 
-  tempEl = document.querySelectorAll(".peopleInfo");
+  tempEl = document.querySelectorAll(".peopleInfo, .filters");
   tempEl2 = document.querySelector("template.svgPeople").content.cloneNode(true);
   tempEl2.querySelector("title").textContent = "People in the Photo";
   tempEl.forEach((el) => el.prepend(tempEl2.cloneNode(true).children[0]));
@@ -335,84 +537,7 @@ function loginSuccess() {
   tempEl2.querySelector("title").textContent = "Camera Information";
   tempEl.forEach((el) => el.prepend(tempEl2.cloneNode(true).children[0]));
 
-
-
-  const clickElements = navFooterEl.querySelectorAll(".navBtn");
-  clickElements.forEach((el) => {
-    el.addEventListener('click', () => {navClick(el.id)})});
-
-  function navClick(target) {
-    console.log(target);
-    if (target == 'navLocation') {
-      if (currentId == null) return; 
-      if (photos2[currentId]?.Composite?.GPSLatitude == undefined) return;
-      if (photos2[currentId]?.Composite?.GPSLongitude == undefined) return;
-      window.open(`https://www.google.com/maps/search/?api=1&query=${photos2[currentId]?.Composite?.GPSLatitude}%2C${photos2[currentId]?.Composite?.GPSLongitude}`);
-      return;
-    }
-    if (target == 'navInfo') {
-      popUpHideAll();
-      photoInfoEl.classList.remove("hidden");
-      return;
-    }
-    if (target == 'navTag') {
-      popUpHideAll();
-      photoTagsEl.classList.remove("hidden");
-      return;
-    }
-    if (target == 'navPeople') {
-      popUpHideAll();
-      photoPeopleEl.classList.remove("hidden");
-      return;
-    }
-  }
-  
-  const navBtnEl = navFooterEl.querySelector("#navActive");
-  const navEl = navFooterEl.querySelector(".nav-collapse");
-  const navBoxesEl = navFooterEl.querySelectorAll(".nav-collapse .box");
-  navBtnEl.addEventListener("click", () => {
-    navBtnEl.classList.toggle("active");
-    if (navEl.classList.contains("active")) {
-      navBoxesEl.forEach((box) => {
-        box.classList.remove("active");
-      });
-      navEl.style.width = `6rem`;
-      setTimeout(() => {
-        navEl.classList.remove("active");
-      }, 500);
-    } else {
-      navEl.classList.add("active");
-      setTimeout(() => {
-        navEl.style.width = `40rem`;
-        navBoxesEl.forEach((box) => {
-          box.classList.add("active");
-        });
-      }, 500);
-    }
-  });
-
-  // const navInfoEl = document.getElementById("navInfo");
-  // navInfoEl.addEventListener("click", () =>{
-  //   //https://www.google.com/maps/search/?api=1&query=47.5951518%2C-122.3316393
-  // });
-
-  // const navPeopleEl = document.getElementById("navPeople");
-  // navPeopleEl.addEventListener("click", () =>{
-  //   //https://www.google.com/maps/search/?api=1&query=47.5951518%2C-122.3316393
-  // });
-
-  // const navTagEl = document.getElementById("navTag");
-  // navTagEl.addEventListener("click", () =>{
-  //   //https://www.google.com/maps/search/?api=1&query=47.5951518%2C-122.3316393
-  // });
-
-  // const navLocationEl = document.getElementById("navLocation");
-  // navLocationEl.addEventListener("click", () => {
-  //   if (currentId == null) return; 
-  //   if (photos2[currentId]?.Composite?.GPSLatitude == undefined) return;
-  //   if (photos2[currentId]?.Composite?.GPSLongitude == undefined) return;
-  //   window.open(`https://www.google.com/maps/search/?api=1&query=${photos2[currentId]?.Composite?.GPSLatitude}%2C${photos2[currentId]?.Composite?.GPSLongitude}`);
-  // });
+  // add all to dom
   document.getElementById("footerNav").insertAdjacentElement("beforeend", navFooterEl.children[0]);
 }
 
